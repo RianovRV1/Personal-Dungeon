@@ -8,7 +8,7 @@ public class DraggableCamera : MonoBehaviour {
     private Vector3 mouseDelta;
     private Vector3 prevMousePoint;
 
-    public float speed = 0.5f;
+    public float speed = 0.04f;
     // Use this for initialization
     void Start ()
     { }
