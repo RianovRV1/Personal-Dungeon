@@ -57,7 +57,7 @@ public class Grid : MonoBehaviour {
         ypoint = Mathf.Clamp01(ypoint); // clamps it to prevent out of range errors
         int x = Mathf.RoundToInt((gridSizeX - 1) * xpoint); // offsets it by 1 then uses X point poisition to get correct ARRAY INDEX
         int y = Mathf.RoundToInt((gridSizeY - 1) * ypoint); // offsets it by 1 then uses Y point poisition to get correct ARRAY INDEX
-        Debug.Log(string.Format("X: {0} Y: {1}",x, y));
+        
         return grid[x, y];
     }
 
@@ -173,7 +173,7 @@ public class Grid : MonoBehaviour {
                         Gizmos.color = Color.red; //color our node path
                 }
 
-                Gizmos.DrawCube(node.Position, Vector3.one * (nodeDiameter - Distance)); //Draw our node
+                Gizmos.DrawCube(node.Position, Vector3.one * (nodeDiameter/2 - Distance)); //Draw our node
             }
         }
     }

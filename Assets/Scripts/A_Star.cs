@@ -8,20 +8,29 @@ public class A_Star : MonoBehaviour {
     Grid grid;
     public Transform startPosition;
     public Transform endPosition;
-
+    private Vector3 previousStartPosition;
+    private Vector3 previousEndPosition;
+    public FollowPath movingEntity;
     private void Awake()
     {
         grid = GetComponent<Grid>();
+        movingEntity = FindObjectsOfType<FollowPath>()[0];
     }
 
     void Start () {
-		
-	}
+        
+        previousStartPosition = startPosition.position;
+        previousEndPosition = endPosition.position;
+    }
 	
 	// Update is called once per frame
 	private void Update ()
     {
         FindPath(startPosition.position, endPosition.position);
+        if (previousStartPosition != startPosition.position || previousEndPosition != endPosition.position)
+        {
+            movingEntity.canMove = false;
+        }
 	}
 
     void FindPath(Vector3 start, Vector3 end)
@@ -81,8 +90,11 @@ public class A_Star : MonoBehaviour {
         }
 
         FinalPath.Reverse();
-
+        previousStartPosition = startPosition.position;
+        previousEndPosition = endPosition.position;
         grid.FinalPath = FinalPath;
+        movingEntity.canMove = true;
+        movingEntity.followPath = FinalPath;
     }
 
     int GetManHattenDistance(Node nodeA, Node nodeB)
