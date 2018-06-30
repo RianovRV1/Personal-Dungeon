@@ -25,5 +25,10 @@ public class Node
         xPos = x;
         yPos = y;
     }
+
+    public override string ToString()
+    {
+        return "World Position: X: " + Position.x + " Y: " + Position.y + " Z: " + Position.z + "\n";
+    }
 }
 

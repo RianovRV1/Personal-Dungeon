@@ -6,35 +6,43 @@ public class A_Star : MonoBehaviour {
     //algorithm A* for pathfinding
     // Use this for initialization
     Grid grid;
-    public Transform startPosition;
     public Transform endPosition;
-    private Vector3 previousStartPosition;
     private Vector3 previousEndPosition;
-    public FollowPath movingEntity;
+    public static List<FollowPath> movingEntitys = new List<FollowPath>();
+    private bool calculated = false;
     private void Awake()
     {
         grid = GetComponent<Grid>();
-        movingEntity = FindObjectsOfType<FollowPath>()[0];
+        //works with only one, tags might work better
     }
 
     void Start () {
-        
-        previousStartPosition = startPosition.position;
         previousEndPosition = endPosition.position;
     }
 	
 	// Update is called once per frame
 	private void Update ()
     {
-        FindPath(startPosition.position, endPosition.position);
-        if (previousStartPosition != startPosition.position || previousEndPosition != endPosition.position)
+        if (previousEndPosition != endPosition.position)
         {
-            movingEntity.canMove = false;
+            foreach(FollowPath entity in movingEntitys)
+            {
+                entity.SetNull();
+                
+            }
+            calculated = false;
         }
+        if (!calculated)
+        {
+            foreach(FollowPath entity in movingEntitys)
+                FindPath(entity, endPosition.position);
+        }
+        
 	}
 
-    void FindPath(Vector3 start, Vector3 end)
+    void FindPath(FollowPath startEntity, Vector3 end)
     {
+        Vector3 start = startEntity.transform.position;
         Node startNode = grid.NodeFromWorldPosition(start);
         Node targetNode = grid.NodeFromWorldPosition(end);
 
@@ -58,7 +66,7 @@ public class A_Star : MonoBehaviour {
 
             if(CurrentNode == targetNode)
             {
-                GetFinalPath(startNode, targetNode);
+                GetFinalPath(startNode, targetNode, startEntity);
             }
 
             foreach(Node Neighbor in grid.GetNeighboringNodes(CurrentNode))
@@ -79,7 +87,12 @@ public class A_Star : MonoBehaviour {
         }
     }
 
-    void GetFinalPath(Node start, Node end)
+    public static void AddEntity(FollowPath entity)
+    {
+        movingEntitys.Add(entity);
+    }
+
+    void GetFinalPath(Node start, Node end, FollowPath entity)
     {
         List<Node> FinalPath = new List<Node>();
         Node CurrentNode = end;
@@ -90,11 +103,11 @@ public class A_Star : MonoBehaviour {
         }
 
         FinalPath.Reverse();
-        previousStartPosition = startPosition.position;
         previousEndPosition = endPosition.position;
         grid.FinalPath = FinalPath;
-        movingEntity.canMove = true;
-        movingEntity.followPath = FinalPath;
+        entity.canMove = true;
+        entity.followPath = FinalPath;
+        calculated = true;
     }
 
     int GetManHattenDistance(Node nodeA, Node nodeB)
