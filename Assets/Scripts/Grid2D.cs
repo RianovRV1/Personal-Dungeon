@@ -18,8 +18,8 @@ public class Grid2D : MonoBehaviour {
     // Use this for initialization
     private void Start()
     {
-        Distance = Mathf.Clamp(Distance, 0.1f, 100f);
-        nodeRadius =  Mathf.Clamp(nodeRadius, 0.5f, 100f);
+        Distance = Mathf.Clamp(Distance, 0f, 100f);
+        nodeRadius =  Mathf.Clamp(nodeRadius, 0.001f, 100f);
         nodeDiameter = nodeRadius * 2;
         gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);
         gridSizeY = Mathf.RoundToInt(gridWorldSize.y / nodeDiameter);
@@ -41,7 +41,7 @@ public class Grid2D : MonoBehaviour {
             {
                 Vector3 worldPoint = bottomLeft + Vector3.right * (x * nodeDiameter + nodeRadius) + Vector3.up * (y * nodeDiameter + nodeRadius); //math that starts at the bottomleft then adds vectors to get the nodes current location
                 bool Wall = false;
-                bool wallColCheck = Physics.CheckSphere(worldPoint, nodeRadius, wallMask);
+                bool wallColCheck = Physics2D.OverlapCircle(worldPoint, nodeRadius, wallMask);
                 if (wallColCheck)
                 {
                     Wall = true;

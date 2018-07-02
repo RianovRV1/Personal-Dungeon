@@ -50,6 +50,7 @@ public class FollowPath : MonoBehaviour {
     private void OnEnable()
     {
         A_Star.AddEntity(this);
+        A_Star2D.AddEntity(this);
     }
     internal void SetNull()
     {

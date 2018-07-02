@@ -26,9 +26,12 @@ public class Node
         yPos = y;
     }
 
-    public override string ToString()
+    public override string ToString() // for debug printing the node object
     {
-        return "World Position: X: " + Position.x + " Y: " + Position.y + " Z: " + Position.z + "\n";
+        string returnString = "World Position: X: " + Position.x + " Y: " + Position.y + " Z: " + Position.z + "\n Is a wall: " + isWall + " NodeX: " + xPos + " NodeY: " + yPos;
+        if (Parent != null)
+            returnString += " Has Parent";
+        return returnString;
     }
 }
 
