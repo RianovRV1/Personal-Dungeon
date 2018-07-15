@@ -50,7 +50,7 @@ public class A_Star2D : MonoBehaviour {
 
         List<Node> OpenList = new List<Node>();
         HashSet<Node> ClosedList = new HashSet<Node>();
-
+        List<Node> CheckedNeighbors = new List<Node>();
         OpenList.Add(startNode);
 
         while (OpenList.Count > 0)
@@ -68,11 +68,13 @@ public class A_Star2D : MonoBehaviour {
 
             if (CurrentNode == targetNode)
             {
-                GetFinalPath(startNode, targetNode, startEntity);
+                GetFinalPath(startNode, targetNode, startEntity, CheckedNeighbors);
             }
 
             foreach (Node Neighbor in grid.GetNeighboringNodes(CurrentNode))
             {
+                if(!CheckedNeighbors.Contains(Neighbor))
+                    CheckedNeighbors.Add(Neighbor);
                 if (Neighbor.isWall || ClosedList.Contains(Neighbor))
                     continue;
                 int moveCost = CurrentNode.gCost + GetManHattenDistance(CurrentNode, Neighbor);
@@ -94,7 +96,7 @@ public class A_Star2D : MonoBehaviour {
         movingEntitys.Add(entity);
     }
 
-    void GetFinalPath(Node start, Node end, FollowPath entity)
+    void GetFinalPath(Node start, Node end, FollowPath entity, List<Node> VisitedNodes)
     {
         List<Node> FinalPath = new List<Node>();
         Node CurrentNode = end;
@@ -107,6 +109,7 @@ public class A_Star2D : MonoBehaviour {
         FinalPath.Reverse();
         previousEndPosition = endPosition.position;
         grid.FinalPath = FinalPath;
+        grid.visitedNodes = VisitedNodes;
         entity.canMove = true;
         entity.followPath = FinalPath;
         calculated = true;

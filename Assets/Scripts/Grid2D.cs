@@ -8,11 +8,12 @@ public class Grid2D : MonoBehaviour {
     public Vector2 gridWorldSize;
     public float nodeRadius; //node size
     public float Distance; //distance between 
-
-
+    public int searchRadius = 1;
+    internal List<Node> visitedNodes;
     Node[,] grid;
     public List<Node> FinalPath;
-
+    public bool drawPath = false;
+    public bool drawVisited = false;
     float nodeDiameter;
     int gridSizeX, gridSizeY;
     // Use this for initialization
@@ -63,94 +64,63 @@ public class Grid2D : MonoBehaviour {
         return grid[x, y];
     }
 
+    private void AddValidNeighbor(List<Node> inList, int inX, int inY) //helper function to reduce a few lines
+    {
+        if (inX >= 0 && inX < gridSizeX)
+        {
+            if (inY >= 0 && inY < gridSizeY)
+            {
+                inList.Add(grid[inX, inY]);
+            }
+        }
+    }
+
     internal List<Node> GetNeighboringNodes(Node startNode)
     {
-        List<Node> neighboringNodes = new List<Node>();
-        int xCheck, yCheck;
+        if (searchRadius < 1) //prevent for loop from not running at least once.
+            searchRadius = 1;
 
-        //Right Side Checking
-        xCheck = startNode.xPos + 1;
-        yCheck = startNode.yPos;
-        if (xCheck >= 0 && xCheck < gridSizeX)
+        List<Node> neighboringNodes = new List<Node>();//return list
+        int xCheck, yCheck;// variables to hold offsets.
+        
+        for(int i = 1; i <= searchRadius; i++)
         {
-            if (yCheck >= 0 && yCheck < gridSizeY)
+            for (int j = 1; j <= searchRadius; j++)
             {
-                neighboringNodes.Add(grid[xCheck, yCheck]);
-            }
-        }
+                xCheck = startNode.xPos + i;
+                yCheck = startNode.yPos;
+                AddValidNeighbor(neighboringNodes, xCheck, yCheck);
+               
+                xCheck = startNode.xPos + i;
+                yCheck = startNode.yPos + j;
+                AddValidNeighbor(neighboringNodes, xCheck, yCheck);
+                
 
-        // Diagonal Right up 
-        xCheck = startNode.xPos + 1;
-        yCheck = startNode.yPos + 1;
-        if (xCheck >= 0 && xCheck < gridSizeX)
-        {
-            if (yCheck >= 0 && yCheck < gridSizeY)
-            {
-                neighboringNodes.Add(grid[xCheck, yCheck]);
-            }
-        }
-        // Diagonal Right down 
-        xCheck = startNode.xPos + 1;
-        yCheck = startNode.yPos - 1;
-        if (xCheck >= 0 && xCheck < gridSizeX)
-        {
-            if (yCheck >= 0 && yCheck < gridSizeY)
-            {
-                neighboringNodes.Add(grid[xCheck, yCheck]);
-            }
-        }
-        //left Side Checking
-        xCheck = startNode.xPos - 1;
-        yCheck = startNode.yPos;
-        if (xCheck >= 0 && xCheck < gridSizeX)
-        {
-            if (yCheck >= 0 && yCheck < gridSizeY)
-            {
-                neighboringNodes.Add(grid[xCheck, yCheck]);
-            }
-        }
-        // Diagonal left down Side Checking
-        xCheck = startNode.xPos - 1;
-        yCheck = startNode.yPos - 1;
-        if (xCheck >= 0 && xCheck < gridSizeX)
-        {
-            if (yCheck >= 0 && yCheck < gridSizeY)
-            {
-                neighboringNodes.Add(grid[xCheck, yCheck]);
-            }
-        }
-        // Diagonal left up Side Checking
-        xCheck = startNode.xPos - 1;
-        yCheck = startNode.yPos + 1;
-        if (xCheck >= 0 && xCheck < gridSizeX)
-        {
-            if (yCheck >= 0 && yCheck < gridSizeY)
-            {
-                neighboringNodes.Add(grid[xCheck, yCheck]);
-            }
-        }
-        //top Side Checking
-        xCheck = startNode.xPos;
-        yCheck = startNode.yPos + 1;
-        if (xCheck >= 0 && xCheck < gridSizeX)
-        {
-            if (yCheck >= 0 && yCheck < gridSizeY)
-            {
-                neighboringNodes.Add(grid[xCheck, yCheck]);
-            }
-        }
+                xCheck = startNode.xPos + i;
+                yCheck = startNode.yPos - j;
+                AddValidNeighbor(neighboringNodes, xCheck, yCheck);
 
-        //Bottom Side Checking
-        xCheck = startNode.xPos;
-        yCheck = startNode.yPos - 1;
-        if (xCheck >= 0 && xCheck < gridSizeX)
-        {
-            if (yCheck >= 0 && yCheck < gridSizeY)
-            {
-                neighboringNodes.Add(grid[xCheck, yCheck]);
+                xCheck = startNode.xPos - i;
+                yCheck = startNode.yPos;
+                AddValidNeighbor(neighboringNodes, xCheck, yCheck);
+
+                xCheck = startNode.xPos - i;
+                yCheck = startNode.yPos - j;
+                AddValidNeighbor(neighboringNodes, xCheck, yCheck);
+
+                xCheck = startNode.xPos - i;
+                yCheck = startNode.yPos + j;
+                AddValidNeighbor(neighboringNodes, xCheck, yCheck);
+
+                xCheck = startNode.xPos;
+                yCheck = startNode.yPos + j;
+                AddValidNeighbor(neighboringNodes, xCheck, yCheck);
+
+                xCheck = startNode.xPos;
+                yCheck = startNode.yPos - j;
+                AddValidNeighbor(neighboringNodes, xCheck, yCheck);
             }
         }
-
         return neighboringNodes;
     }
     private void OnDrawGizmos()//this is for scene debugging to make sure our grid comes out the way we expect.
@@ -163,16 +133,21 @@ public class Grid2D : MonoBehaviour {
             {
                 if (node.isWall)
                 {
-                    Gizmos.color = Color.white; // color our wall white
+                    Gizmos.color = Color.black; // color our wall white
                 }
                 else
                 {
-                    Gizmos.color = Color.yellow; // color the floor yellow.
+                    Gizmos.color = Color.white; // color the floor yellow.
                 }
-                if (FinalPath != null)
+                if (visitedNodes != null && drawVisited)
+                {
+                    if (visitedNodes.Contains(node))
+                        Gizmos.color = Color.red;
+                }
+                if (FinalPath != null && drawPath)
                 {
                     if (FinalPath.Contains(node))
-                        Gizmos.color = Color.red; //color our node path
+                        Gizmos.color = Color.green; //color our node path
                 }
 
                 Gizmos.DrawCube(node.Position, Vector3.one * (nodeDiameter / 2 - Distance)); //Draw our node

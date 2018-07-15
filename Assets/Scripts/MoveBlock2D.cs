@@ -9,7 +9,7 @@ public class MoveBlock2D : MonoBehaviour {
     //int layer; 
     // Use this for initialization
     public enum HitTag { Floor, Wall};
-    public HitTag tag;
+    public HitTag hitTag;
     void Start()
     {
         //layer = 1 << LayerMask.NameToLayer("floor");
@@ -29,9 +29,9 @@ public class MoveBlock2D : MonoBehaviour {
             //Debug.Log("RayHit " + hit.collider.gameObject.layer +" "+ hitLayers.value);
             if (hit)
             {
-                if (hit.collider.tag == tag.ToString()) //set the hit point of the raycast based on hitlayers
+                if (hit.collider.tag == hitTag.ToString()) //set the hit point of the raycast based on hitlayers
                 {
-                    Debug.Log("RayHit " + hit.collider.name + tag);
+                    Debug.Log("RayHit " + hit.collider.name + hitTag);
                     //if(hit.collider.name == "floor")
                     this.transform.position = hit.point;  //update the position of the object with THIS SCRIPT
                 }
