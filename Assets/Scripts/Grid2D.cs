@@ -15,7 +15,8 @@ public class Grid2D : MonoBehaviour {
     public bool drawPath = false;
     public bool drawVisited = false;
     float nodeDiameter;
-    int gridSizeX, gridSizeY;
+    int gridSizeX, gridSizeY, wallCount;
+    internal int pathableNodes, totalNodeCount;
     // Use this for initialization
     private void Start()
     {
@@ -25,6 +26,7 @@ public class Grid2D : MonoBehaviour {
         gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);
         gridSizeY = Mathf.RoundToInt(gridWorldSize.y / nodeDiameter);
         GenerateGrid();
+        
     }
 
     // Update is called once per frame
@@ -35,6 +37,7 @@ public class Grid2D : MonoBehaviour {
     void GenerateGrid()//user made function to initialize grid
     {
         grid = new Node[gridSizeX, gridSizeY];
+        totalNodeCount = (gridSizeX * gridSizeY);
         Vector3 bottomLeft = transform.position - Vector3.right * gridWorldSize.x / 2 - Vector3.up * gridWorldSize.y / 2; //Math to take the center position then find the bottomleft location of the grid
         for (int y = 0; y < gridSizeY; y++)
         {
@@ -46,11 +49,12 @@ public class Grid2D : MonoBehaviour {
                 if (wallColCheck)
                 {
                     Wall = true;
+                    wallCount += 1;
                 }
-                Debug.Log("X: " + x + " Y: " + y);
                 grid[x, y] = new Node(Wall, worldPoint, x, y);
             }
         }
+        pathableNodes = totalNodeCount - wallCount;
     }
     internal Node NodeFromWorldPosition(Vector3 worldPosition)
     {
@@ -129,6 +133,7 @@ public class Grid2D : MonoBehaviour {
 
         if (grid != null)
         {
+
             foreach (Node node in grid)
             {
                 if (node.isWall)
@@ -139,11 +144,13 @@ public class Grid2D : MonoBehaviour {
                 {
                     Gizmos.color = Color.white; // color the floor yellow.
                 }
+
                 if (visitedNodes != null && drawVisited)
                 {
-                    if (visitedNodes.Contains(node))
+                    if(visitedNodes.Contains(node))
                         Gizmos.color = Color.red;
                 }
+
                 if (FinalPath != null && drawPath)
                 {
                     if (FinalPath.Contains(node))

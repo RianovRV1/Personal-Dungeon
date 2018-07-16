@@ -7,17 +7,8 @@ public class FollowPath : MonoBehaviour {
     internal Node goToNode;
     private int index = 0;
     public float speed = 10f;
-    public bool canMove = false;
+    internal bool canMove = false;
     // Use this for initialization
-    private void Awake()
-    {
-        
-    }
-    
-	void Start () {
-        
-    }
-	
 	// Update is called once per frame
 	void Update () {
         if (goToNode != null && canMove)
@@ -33,7 +24,6 @@ public class FollowPath : MonoBehaviour {
             if (goToNode == null && followPath.Count > 0) 
             {
                 goToNode = followPath[index];
-                Debug.Log(goToNode);
             }
             if(goToNode != null)
                 if (transform.position == goToNode.Position)

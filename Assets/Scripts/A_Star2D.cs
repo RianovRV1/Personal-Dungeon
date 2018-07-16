@@ -11,6 +11,7 @@ public class A_Star2D : MonoBehaviour {
     private Vector3 previousEndPosition;
     public static List<FollowPath> movingEntitys = new List<FollowPath>();
     private bool calculated = false;
+    public int nodeCheck = 0;
     private void Awake()
     {
         grid = GetComponent<Grid2D>();
@@ -52,8 +53,8 @@ public class A_Star2D : MonoBehaviour {
         HashSet<Node> ClosedList = new HashSet<Node>();
         List<Node> CheckedNeighbors = new List<Node>();
         OpenList.Add(startNode);
-
-        while (OpenList.Count > 0)
+        
+        while (OpenList.Count > 0 && startEntity.followPath == null)
         {
             Node CurrentNode = OpenList[0];
             for (int i = 1; i < OpenList.Count; i++)
@@ -69,16 +70,17 @@ public class A_Star2D : MonoBehaviour {
             if (CurrentNode == targetNode)
             {
                 GetFinalPath(startNode, targetNode, startEntity, CheckedNeighbors);
+                break;
             }
 
             foreach (Node Neighbor in grid.GetNeighboringNodes(CurrentNode))
             {
-                if(!CheckedNeighbors.Contains(Neighbor))
+                if (!CheckedNeighbors.Contains(Neighbor))
                     CheckedNeighbors.Add(Neighbor);
                 if (Neighbor.isWall || ClosedList.Contains(Neighbor))
                     continue;
                 int moveCost = CurrentNode.gCost + GetManHattenDistance(CurrentNode, Neighbor);
-
+                
                 if (moveCost < Neighbor.gCost || !OpenList.Contains(Neighbor))
                 {
                     Neighbor.gCost = moveCost;
@@ -96,7 +98,7 @@ public class A_Star2D : MonoBehaviour {
         movingEntitys.Add(entity);
     }
 
-    void GetFinalPath(Node start, Node end, FollowPath entity, List<Node> VisitedNodes)
+    void GetFinalPath(Node start, Node end, FollowPath entity, List<Node> visitedNodes)
     {
         List<Node> FinalPath = new List<Node>();
         Node CurrentNode = end;
@@ -109,10 +111,12 @@ public class A_Star2D : MonoBehaviour {
         FinalPath.Reverse();
         previousEndPosition = endPosition.position;
         grid.FinalPath = FinalPath;
-        grid.visitedNodes = VisitedNodes;
+        grid.visitedNodes = visitedNodes;
+        nodeCheck = grid.visitedNodes.Count;
         entity.canMove = true;
         entity.followPath = FinalPath;
         calculated = true;
+        Debug.Log(string.Format("Calculated a path. Path Node Count {0}, Visited Node Count: {1}, grid size: {2}, grid floor tile count: {3}", grid.FinalPath.Count, grid.visitedNodes.Count, grid.totalNodeCount, grid.pathableNodes));
     }
 
     int GetManHattenDistance(Node nodeA, Node nodeB)
