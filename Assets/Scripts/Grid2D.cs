@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+/// <summary>
+/// 2D grid for node generation accross a 2D plane, specfically implemented for Unity 2D accounting for X and Y 
+/// </summary>
 public class Grid2D : MonoBehaviour {
 
     public LayerMask wallMask;
@@ -12,6 +14,8 @@ public class Grid2D : MonoBehaviour {
     internal List<Node> visitedNodes;
     Node[,] grid;
     public List<Node> FinalPath;
+    public bool onlyPath = false;
+    public bool drawGizmos = true;
     public bool drawPath = false;
     public bool drawVisited = false;
     float nodeDiameter;
@@ -130,34 +134,57 @@ public class Grid2D : MonoBehaviour {
     private void OnDrawGizmos()//this is for scene debugging to make sure our grid comes out the way we expect.
     {
         Gizmos.DrawWireCube(transform.position, new Vector3(gridWorldSize.x, gridWorldSize.y, 1));
-
-        if (grid != null)
+        if (drawGizmos)
         {
-
-            foreach (Node node in grid)
+            if (grid != null)
             {
-                if (node.isWall)
+                if (!onlyPath)
                 {
-                    Gizmos.color = Color.black; // color our wall white
+                    foreach (Node node in grid)
+                    {
+
+                        if (node.isWall)
+                        {
+                            Gizmos.color = Color.black; // color our wall white
+                        }
+                        else
+                        {
+                            Gizmos.color = Color.white; // color the floor yellow.
+                        }
+                        if (visitedNodes != null && drawVisited)
+                        {
+                            if (visitedNodes.Contains(node))
+                                Gizmos.color = Color.red;
+                        }
+
+                        if (FinalPath != null && drawPath)
+                        {
+                            if (FinalPath.Contains(node))
+                                Gizmos.color = Color.green; //color our node path
+                        }
+                        Gizmos.DrawCube(node.Position, Vector3.one * (nodeDiameter / 2 - Distance)); //Draw our node
+                    }
                 }
                 else
                 {
-                    Gizmos.color = Color.white; // color the floor yellow.
+                    if (FinalPath != null && drawPath)
+                        if (drawVisited && visitedNodes != null)
+                        {
+                            foreach (Node node in visitedNodes)
+                            {
+                                Gizmos.color = Color.red;
+                                Gizmos.DrawCube(node.Position, Vector3.one * (nodeDiameter / 2 - Distance)); //Draw our node
+                            }
+                        foreach (Node node in FinalPath)
+                        {
+                            Gizmos.color = Color.green;
+                            Gizmos.DrawCube(node.Position, Vector3.one * (nodeDiameter / 2 - Distance)); //Draw our node
+                        }
                 }
+                   
 
-                if (visitedNodes != null && drawVisited)
-                {
-                    if(visitedNodes.Contains(node))
-                        Gizmos.color = Color.red;
+                    
                 }
-
-                if (FinalPath != null && drawPath)
-                {
-                    if (FinalPath.Contains(node))
-                        Gizmos.color = Color.green; //color our node path
-                }
-
-                Gizmos.DrawCube(node.Position, Vector3.one * (nodeDiameter / 2 - Distance)); //Draw our node
             }
         }
     }

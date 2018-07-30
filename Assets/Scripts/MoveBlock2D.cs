@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+/// <summary>
+/// Moves a PoI waypoint gameobject to where the mouse is clicked if its a classificed clickable Enum tag
+/// </summary>
 public class MoveBlock2D : MonoBehaviour {
 
     //int layer;

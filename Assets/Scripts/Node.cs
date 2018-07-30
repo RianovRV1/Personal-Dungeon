@@ -1,8 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-public class Node : System.IEquatable<Node>
+/// <summary>
+/// A Node for A_star
+/// </summary>
+public class Node : System.IEquatable<Node>, IHeapItem<Node>
 {
     //A node for path finding containing, distance from start, distance from end, and the sum of START + END
     public int xPos; //x of node
@@ -16,7 +18,9 @@ public class Node : System.IEquatable<Node>
     public int hCost;//Cost of this square until destination
 
     public int FCost { get { return gCost + hCost; } } //no set needed to edit this. Total weight of node
-
+    private int _heapIndex;
+    public int HeapIndex { get { return _heapIndex; } set { _heapIndex = value; } }
+    
     public Node(bool wall, Vector3 in_Pos, int x, int y)//Class constructor
     {
         isWall = wall;
@@ -54,6 +58,18 @@ public class Node : System.IEquatable<Node>
     {
         return xPos ^ yPos ^ (int)Position.x ^ (int)Position.y ^ (int)Position.z;
     }
+    public int CompareTo(Node other) //using inverse of built in int compare based on code given for compare to result
+    {
+        int compare = FCost.CompareTo(other.FCost);
+        if (compare == 0)
+        {
+            compare = hCost.CompareTo(other.hCost);
+        }
+        return -compare;
+    }
+
+    
+    
     public static bool operator ==(Node a, Node b)
     {
         // If both are null, or both are same instance, return true.

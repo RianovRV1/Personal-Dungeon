@@ -1,12 +1,17 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using System.Diagnostics;
+/// <summary>
+/// Monobehavior that calculates weights on nodes in a 2D grid in Unity 2D setting
+/// Key bit for weight calculation
+/// </summary>
 public class A_Star2D : MonoBehaviour {
 
     //algorithm A* for pathfinding
     // Use this for initialization
     Grid2D grid;
+    
     public Transform endPosition;
     private Vector3 previousEndPosition;
     public static List<FollowPath> movingEntitys = new List<FollowPath>();
@@ -43,34 +48,32 @@ public class A_Star2D : MonoBehaviour {
 
     }
 
-    void FindPath(FollowPath startEntity, Vector3 end)
+    void FindPath(FollowPath startEntity, Vector3 end) // start Vec3 is extracted from startEntity
     {
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
         Vector3 start = startEntity.transform.position;
         Node startNode = grid.NodeFromWorldPosition(start);
         Node targetNode = grid.NodeFromWorldPosition(end);
 
-        List<Node> OpenList = new List<Node>();
+
+
+        Heap<Node> OpenList = new Heap<Node>(grid.totalNodeCount);
         HashSet<Node> ClosedList = new HashSet<Node>();
         List<Node> CheckedNeighbors = new List<Node>();
         OpenList.Add(startNode);
         
         while (OpenList.Count > 0 && startEntity.followPath == null)
         {
-            Node CurrentNode = OpenList[0];
-            for (int i = 1; i < OpenList.Count; i++)
-            {
-                if (OpenList[i].FCost < CurrentNode.FCost || OpenList[i].FCost == CurrentNode.FCost && OpenList[i].hCost < CurrentNode.hCost)
-                {
-                    CurrentNode = OpenList[i];
-                }
-            }
-            OpenList.Remove(CurrentNode);
+            Node CurrentNode = OpenList.RemoveFirst();
             ClosedList.Add(CurrentNode);
 
             if (CurrentNode == targetNode)
             {
+                sw.Stop();
+                UnityEngine.Debug.Log("Path was found in " + sw.ElapsedMilliseconds + " Milliseconds");
                 GetFinalPath(startNode, targetNode, startEntity, CheckedNeighbors);
-                break;
+                return;
             }
 
             foreach (Node Neighbor in grid.GetNeighboringNodes(CurrentNode))
@@ -88,6 +91,7 @@ public class A_Star2D : MonoBehaviour {
                     Neighbor.Parent = CurrentNode;
                     if (!OpenList.Contains(Neighbor))
                         OpenList.Add(Neighbor);
+                    OpenList.UpdateItem(Neighbor);
                 }
             }
         }
@@ -112,17 +116,19 @@ public class A_Star2D : MonoBehaviour {
         previousEndPosition = endPosition.position;
         grid.FinalPath = FinalPath;
         grid.visitedNodes = visitedNodes;
-        nodeCheck = grid.visitedNodes.Count;
+        nodeCheck = visitedNodes.Count;
         entity.canMove = true;
         entity.followPath = FinalPath;
         calculated = true;
-        Debug.Log(string.Format("Calculated a path. Path Node Count {0}, Visited Node Count: {1}, grid size: {2}, grid floor tile count: {3}", grid.FinalPath.Count, grid.visitedNodes.Count, grid.totalNodeCount, grid.pathableNodes));
+        UnityEngine.Debug.Log(string.Format("Calculated a path. Path Node Count {0}, Visited Node Count: {1}, grid size: {2}, grid floor tile count: {3}", FinalPath.Count, visitedNodes.Count, grid.totalNodeCount, grid.pathableNodes));
     }
 
     int GetManHattenDistance(Node nodeA, Node nodeB)
     {
         int x = Mathf.Abs(nodeA.xPos - nodeB.xPos);
         int y = Mathf.Abs(nodeA.yPos - nodeB.yPos);
-        return x + y;
+        if (x > y)
+            return 14 * y + 10 * (x - y);
+        return 14 * x + 10 * (y - x);
     }
 }
