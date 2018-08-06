@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Diagnostics;
@@ -10,99 +11,83 @@ public class A_Star2D : MonoBehaviour {
 
     //algorithm A* for pathfinding
     // Use this for initialization
+    PathRequestManager requestManager;
     Grid2D grid;
-    
-    public Transform endPosition;
-    private Vector3 previousEndPosition;
-    public static List<FollowPath> movingEntitys = new List<FollowPath>();
-    private bool calculated = false;
-    public int nodeCheck = 0;
     private void Awake()
     {
         grid = GetComponent<Grid2D>();
+        requestManager = GetComponent<PathRequestManager>();
         //works with only one, tags might work better
     }
 
-    void Start()
-    {
-        previousEndPosition = endPosition.position;
-    }
-
     // Update is called once per frame
-    private void Update()
+  
+    internal void StartFindPath(Vector3 startPos, Vector3 endPos)
     {
-        if (previousEndPosition != endPosition.position)
-        {
-            foreach (FollowPath entity in movingEntitys)
-            {
-                entity.SetNull();
-
-            }
-            calculated = false;
-        }
-        if (!calculated)
-        {
-            foreach (FollowPath entity in movingEntitys)
-                FindPath(entity, endPosition.position);
-        }
-
+        StartCoroutine(FindPath(startPos, endPos));
     }
-
-    void FindPath(FollowPath startEntity, Vector3 end) // start Vec3 is extracted from startEntity
+    IEnumerator FindPath(Vector3 start, Vector3 end) // start Vec3 is extracted from startEntity
     {
         Stopwatch sw = new Stopwatch();
         sw.Start();
-        Vector3 start = startEntity.transform.position;
+
+        Vector3[] waypoints = new Vector3[0];
+        bool pathFound = false;
+
         Node startNode = grid.NodeFromWorldPosition(start);
         Node targetNode = grid.NodeFromWorldPosition(end);
 
-
-
-        Heap<Node> OpenList = new Heap<Node>(grid.totalNodeCount);
-        HashSet<Node> ClosedList = new HashSet<Node>();
         List<Node> CheckedNeighbors = new List<Node>();
-        OpenList.Add(startNode);
-        
-        while (OpenList.Count > 0 && startEntity.followPath == null)
+        if (!startNode.isWall && !targetNode.isWall)
         {
-            Node CurrentNode = OpenList.RemoveFirst();
-            ClosedList.Add(CurrentNode);
+            Heap<Node> OpenList = new Heap<Node>(grid.totalNodeCount);
+            HashSet<Node> ClosedList = new HashSet<Node>();
+            CheckedNeighbors = new List<Node>();
+            OpenList.Add(startNode);
 
-            if (CurrentNode == targetNode)
+            while (OpenList.Count > 0)
             {
-                sw.Stop();
-                UnityEngine.Debug.Log("Path was found in " + sw.ElapsedMilliseconds + " Milliseconds");
-                GetFinalPath(startNode, targetNode, startEntity, CheckedNeighbors);
-                return;
-            }
+                Node CurrentNode = OpenList.RemoveFirst();
+                ClosedList.Add(CurrentNode);
 
-            foreach (Node Neighbor in grid.GetNeighboringNodes(CurrentNode))
-            {
-                if (!CheckedNeighbors.Contains(Neighbor))
-                    CheckedNeighbors.Add(Neighbor);
-                if (Neighbor.isWall || ClosedList.Contains(Neighbor))
-                    continue;
-                int moveCost = CurrentNode.gCost + GetManHattenDistance(CurrentNode, Neighbor);
-                
-                if (moveCost < Neighbor.gCost || !OpenList.Contains(Neighbor))
+                if (CurrentNode == targetNode)
                 {
-                    Neighbor.gCost = moveCost;
-                    Neighbor.hCost = GetManHattenDistance(Neighbor, targetNode);
-                    Neighbor.Parent = CurrentNode;
-                    if (!OpenList.Contains(Neighbor))
-                        OpenList.Add(Neighbor);
-                    OpenList.UpdateItem(Neighbor);
+                    sw.Stop();
+                    UnityEngine.Debug.Log("Path was found in " + sw.ElapsedMilliseconds + " Milliseconds");
+                    pathFound = true;
+
+                    break;
+                }
+
+                foreach (Node Neighbor in grid.GetNeighboringNodes(CurrentNode))
+                {
+                    if (!CheckedNeighbors.Contains(Neighbor))
+                        CheckedNeighbors.Add(Neighbor);
+                    if (Neighbor.isWall || ClosedList.Contains(Neighbor))
+                        continue;
+                    int moveCost = CurrentNode.gCost + GetManHattenDistance(CurrentNode, Neighbor);
+
+                    if (moveCost < Neighbor.gCost || !OpenList.Contains(Neighbor))
+                    {
+                        Neighbor.gCost = moveCost;
+                        Neighbor.hCost = GetManHattenDistance(Neighbor, targetNode);
+                        Neighbor.Parent = CurrentNode;
+                        if (!OpenList.Contains(Neighbor))
+                            OpenList.Add(Neighbor);
+                        OpenList.UpdateItem(Neighbor);
+                    }
                 }
             }
         }
+        yield return null;
+        if (pathFound)
+        {
+            waypoints = GetFinalPath(startNode, targetNode, CheckedNeighbors);
+        }
+        requestManager.FinishedProcessingPath(waypoints, pathFound);
     }
 
-    public static void AddEntity(FollowPath entity)
-    {
-        movingEntitys.Add(entity);
-    }
-
-    void GetFinalPath(Node start, Node end, FollowPath entity, List<Node> visitedNodes)
+    Vector3[] GetFinalPath(Node start, Node end, List<Node> visitedNodes)
     {
         List<Node> FinalPath = new List<Node>();
         Node CurrentNode = end;
@@ -111,16 +96,28 @@ public class A_Star2D : MonoBehaviour {
             FinalPath.Add(CurrentNode);
             CurrentNode = CurrentNode.Parent;
         }
-
-        FinalPath.Reverse();
-        previousEndPosition = endPosition.position;
-        grid.FinalPath = FinalPath;
-        grid.visitedNodes = visitedNodes;
-        nodeCheck = visitedNodes.Count;
-        entity.canMove = true;
-        entity.followPath = FinalPath;
-        calculated = true;
+        Vector3[] waypoints = SimplifyPath(FinalPath);
+        Array.Reverse(waypoints);
+        //grid.FinalPath = FinalPath; //consider removing all these things
+        //grid.visitedNodes = visitedNodes;
         UnityEngine.Debug.Log(string.Format("Calculated a path. Path Node Count {0}, Visited Node Count: {1}, grid size: {2}, grid floor tile count: {3}", FinalPath.Count, visitedNodes.Count, grid.totalNodeCount, grid.pathableNodes));
+        return waypoints;
+    }
+
+    Vector3[] SimplifyPath(List<Node> path)
+    {
+        List<Vector3> waypoints = new List<Vector3>();
+        Vector2 oldDirection = Vector2.zero;
+        for(int i = 1; i < path.Count; i++)
+        {
+            Vector2 newDirection = new Vector2(path[i - 1].xPos - path[i].xPos, path[i - 1].yPos - path[i].yPos);
+            if(newDirection != oldDirection)
+            {
+                waypoints.Add(path[i].Position);
+            }
+            oldDirection = newDirection;
+        }
+        return waypoints.ToArray();
     }
 
     int GetManHattenDistance(Node nodeA, Node nodeB)

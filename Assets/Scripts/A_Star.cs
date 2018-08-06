@@ -105,8 +105,6 @@ public class A_Star : MonoBehaviour {
         FinalPath.Reverse();
         previousEndPosition = endPosition.position;
         grid.FinalPath = FinalPath;
-        entity.canMove = true;
-        entity.followPath = FinalPath;
         calculated = true;
     }
 

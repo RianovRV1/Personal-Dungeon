@@ -10,6 +10,7 @@ public class MoveBlock2D : MonoBehaviour {
     //public LayerMask ignoreLayers;
     //int layer; 
     // Use this for initialization
+    public bool hasMoved = true;
     public enum HitTag { Floor, Wall};
     public HitTag hitTag;
     void Start()
@@ -22,6 +23,7 @@ public class MoveBlock2D : MonoBehaviour {
     {
         if (Input.GetMouseButtonDown(0)) //click mouse
         {
+            hasMoved = true;
             Debug.Log("casting ray");
             
             Vector3 mouse = Input.mousePosition; //get mouse position

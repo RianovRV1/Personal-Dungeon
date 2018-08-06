@@ -11,18 +11,13 @@ public class Grid2D : MonoBehaviour {
     public float nodeRadius; //node size
     public float Distance; //distance between 
     public int searchRadius = 1;
-    internal List<Node> visitedNodes;
     Node[,] grid;
-    public List<Node> FinalPath;
-    public bool onlyPath = false;
     public bool drawGizmos = true;
-    public bool drawPath = false;
-    public bool drawVisited = false;
     float nodeDiameter;
     int gridSizeX, gridSizeY, wallCount;
     internal int pathableNodes, totalNodeCount;
     // Use this for initialization
-    private void Start()
+    private void Awake()
     {
         Distance = Mathf.Clamp(Distance, 0f, 100f);
         nodeRadius =  Mathf.Clamp(nodeRadius, 0.001f, 100f);
@@ -138,52 +133,18 @@ public class Grid2D : MonoBehaviour {
         {
             if (grid != null)
             {
-                if (!onlyPath)
+                foreach (Node node in grid)
                 {
-                    foreach (Node node in grid)
+
+                    if (node.isWall)
                     {
-
-                        if (node.isWall)
-                        {
-                            Gizmos.color = Color.black; // color our wall white
-                        }
-                        else
-                        {
-                            Gizmos.color = Color.white; // color the floor yellow.
-                        }
-                        if (visitedNodes != null && drawVisited)
-                        {
-                            if (visitedNodes.Contains(node))
-                                Gizmos.color = Color.red;
-                        }
-
-                        if (FinalPath != null && drawPath)
-                        {
-                            if (FinalPath.Contains(node))
-                                Gizmos.color = Color.green; //color our node path
-                        }
-                        Gizmos.DrawCube(node.Position, Vector3.one * (nodeDiameter / 2 - Distance)); //Draw our node
+                        Gizmos.color = Color.black; // color our wall white
                     }
-                }
-                else
-                {
-                    if (FinalPath != null && drawPath)
-                        if (drawVisited && visitedNodes != null)
-                        {
-                            foreach (Node node in visitedNodes)
-                            {
-                                Gizmos.color = Color.red;
-                                Gizmos.DrawCube(node.Position, Vector3.one * (nodeDiameter / 2 - Distance)); //Draw our node
-                            }
-                        foreach (Node node in FinalPath)
-                        {
-                            Gizmos.color = Color.green;
-                            Gizmos.DrawCube(node.Position, Vector3.one * (nodeDiameter / 2 - Distance)); //Draw our node
-                        }
-                }
-                   
-
-                    
+                    else
+                    {
+                        Gizmos.color = Color.white; // color the floor yellow.
+                    }
+                    Gizmos.DrawCube(node.Position, Vector3.one * (nodeDiameter / 2 - Distance)); //Draw our node
                 }
             }
         }
