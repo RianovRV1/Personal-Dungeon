@@ -13,6 +13,7 @@ public class A_Star2D : MonoBehaviour {
     // Use this for initialization
     PathRequestManager requestManager;
     Grid2D grid;
+    public bool weightGraph = false;
     private void Awake()
     {
         grid = GetComponent<Grid2D>();
@@ -38,7 +39,7 @@ public class A_Star2D : MonoBehaviour {
         Node targetNode = grid.NodeFromWorldPosition(end);
 
         List<Node> CheckedNeighbors = new List<Node>();
-        if (!startNode.isWall && !targetNode.isWall)
+        if (!targetNode.isWall)
         {
             Heap<Node> OpenList = new Heap<Node>(grid.totalNodeCount);
             HashSet<Node> ClosedList = new HashSet<Node>();
@@ -55,7 +56,6 @@ public class A_Star2D : MonoBehaviour {
                     sw.Stop();
                     UnityEngine.Debug.Log("Path was found in " + sw.ElapsedMilliseconds + " Milliseconds");
                     pathFound = true;
-
                     break;
                 }
 
@@ -65,7 +65,7 @@ public class A_Star2D : MonoBehaviour {
                         CheckedNeighbors.Add(Neighbor);
                     if (Neighbor.isWall || ClosedList.Contains(Neighbor))
                         continue;
-                    int moveCost = CurrentNode.gCost + GetManHattenDistance(CurrentNode, Neighbor);
+                    int moveCost = CurrentNode.gCost + GetManHattenDistance(CurrentNode, Neighbor) + (weightGraph ? Neighbor.weightPenalty : 0);
 
                     if (moveCost < Neighbor.gCost || !OpenList.Contains(Neighbor))
                     {
@@ -74,7 +74,8 @@ public class A_Star2D : MonoBehaviour {
                         Neighbor.Parent = CurrentNode;
                         if (!OpenList.Contains(Neighbor))
                             OpenList.Add(Neighbor);
-                        OpenList.UpdateItem(Neighbor);
+                        else
+                            OpenList.UpdateItem(Neighbor);
                     }
                 }
             }

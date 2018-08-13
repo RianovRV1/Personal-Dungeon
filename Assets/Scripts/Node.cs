@@ -9,6 +9,8 @@ public class Node : System.IEquatable<Node>, IHeapItem<Node>
     //A node for path finding containing, distance from start, distance from end, and the sum of START + END
     public int xPos; //x of node
     public int yPos; //y of node
+    public int weightPenalty; //how prefered a node is for pathing
+
 
     public bool isWall;//If node has wall object
     public Vector3 Position;//In world location of node
@@ -21,12 +23,13 @@ public class Node : System.IEquatable<Node>, IHeapItem<Node>
     private int _heapIndex;
     public int HeapIndex { get { return _heapIndex; } set { _heapIndex = value; } }
     
-    public Node(bool wall, Vector3 in_Pos, int x, int y)//Class constructor
+    public Node(bool wall, Vector3 in_Pos, int x, int y, int penalty)//Class constructor
     {
         isWall = wall;
         Position = in_Pos;
         xPos = x;
         yPos = y;
+        weightPenalty = penalty;
     }
 
     public override string ToString() // for debug printing the node object

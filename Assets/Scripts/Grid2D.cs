@@ -10,7 +10,11 @@ public class Grid2D : MonoBehaviour {
     public Vector2 gridWorldSize;
     public float nodeRadius; //node size
     public float Distance; //distance between 
-    public int searchRadius = 1;
+    int searchRadius = 1;
+    public TerrianType[] walkableRegions;
+    LayerMask walkableMask;
+    Dictionary<int, int> walkableDict = new Dictionary<int, int>();
+
     Node[,] grid;
     public bool drawGizmos = true;
     float nodeDiameter;
@@ -24,15 +28,17 @@ public class Grid2D : MonoBehaviour {
         nodeDiameter = nodeRadius * 2;
         gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);
         gridSizeY = Mathf.RoundToInt(gridWorldSize.y / nodeDiameter);
+        foreach (TerrianType region in walkableRegions)
+        {
+            walkableMask.value += region.terrianMask.value;
+            walkableDict.Add((int)Mathf.Log(region.terrianMask.value, 2f), region.terrainPenalty);
+        }
+
         GenerateGrid();
         
     }
 
     // Update is called once per frame
-    void Update()
-    {
-
-    }
     void GenerateGrid()//user made function to initialize grid
     {
         grid = new Node[gridSizeX, gridSizeY];
@@ -50,7 +56,21 @@ public class Grid2D : MonoBehaviour {
                     Wall = true;
                     wallCount += 1;
                 }
-                grid[x, y] = new Node(Wall, worldPoint, x, y);
+
+                int weightPenalty = 0;
+
+                // raycast for weight
+                if (!wallColCheck)
+                {
+                    RaycastHit2D hit = Physics2D.Raycast(worldPoint, Vector2.zero, Mathf.Infinity, walkableMask);
+                    if(hit)
+                    {
+                        walkableDict.TryGetValue(hit.collider.gameObject.layer, out weightPenalty);
+                    }
+                    
+                }
+
+                grid[x, y] = new Node(Wall, worldPoint, x, y, weightPenalty);
             }
         }
         pathableNodes = totalNodeCount - wallCount;
@@ -149,4 +169,12 @@ public class Grid2D : MonoBehaviour {
             }
         }
     }
+
+    [System.Serializable]
+    public class TerrianType
+    {
+        public LayerMask terrianMask;
+        public int terrainPenalty;
+    }
 }
+

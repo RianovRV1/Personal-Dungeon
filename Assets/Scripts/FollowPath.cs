@@ -46,7 +46,7 @@ public class FollowPath : MonoBehaviour {
 
     IEnumerator FollowPathArray()
     {
-        Vector3 currentWaypoint = followPath[0];
+        Vector3 currentWaypoint = new Vector3(followPath[0].x, followPath[0].y, transform.position.z);
         while (true)
         {
             if(transform.position == currentWaypoint)
@@ -56,7 +56,7 @@ public class FollowPath : MonoBehaviour {
                 {
                     yield break;
                 }
-                currentWaypoint = followPath[index];
+                currentWaypoint = new Vector3(followPath[index].x, followPath[index].y, transform.position.z);
             }
             transform.position = Vector3.MoveTowards(transform.position, currentWaypoint, speed * Time.deltaTime);
             yield return null;

@@ -43,8 +43,8 @@ public class Grid : MonoBehaviour {
                 {
                     Wall = true;
                 }
-
-                grid[x, y] = new Node(Wall, worldPoint, x, y);
+                int weight = 0;
+                grid[x, y] = new Node(Wall, worldPoint, x, y, weight);
             }
         }
     }
