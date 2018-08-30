@@ -14,10 +14,13 @@ public class Grid2D : MonoBehaviour {
     public TerrianType[] walkableRegions;
     LayerMask walkableMask;
     Dictionary<int, int> walkableDict = new Dictionary<int, int>();
-
+    public bool blurredGraph = true;
+    public int blurRadius = 3;
     Node[,] grid;
     public bool drawGizmos = true;
     float nodeDiameter;
+    int minPenalty = int.MaxValue;
+    int maxPenalty = int.MinValue;
     int gridSizeX, gridSizeY, wallCount;
     internal int pathableNodes, totalNodeCount;
     // Use this for initialization
@@ -60,7 +63,7 @@ public class Grid2D : MonoBehaviour {
                 int weightPenalty = 0;
 
                 // raycast for weight
-                if (!wallColCheck)
+                if (!wallColCheck || blurredGraph)
                 {
                     RaycastHit2D hit = Physics2D.Raycast(worldPoint, Vector2.zero, Mathf.Infinity, walkableMask);
                     if(hit)
@@ -74,6 +77,8 @@ public class Grid2D : MonoBehaviour {
             }
         }
         pathableNodes = totalNodeCount - wallCount;
+        if(blurredGraph)
+            BlurGridWeights(blurRadius);
     }
     internal Node NodeFromWorldPosition(Vector3 worldPosition)
     {
@@ -94,6 +99,54 @@ public class Grid2D : MonoBehaviour {
             if (inY >= 0 && inY < gridSizeY)
             {
                 inList.Add(grid[inX, inY]);
+            }
+        }
+    }
+
+    void BlurGridWeights(int blursize)
+    {
+        int kernelSize = (blursize*2) + 1;
+        //int kernelExtents = (kernelSize - 1 ) / 2;
+        int kernelExtents = blursize;
+
+        int[,] horizontalBlur = new int[gridSizeX, gridSizeY];
+        int[,] veritcalBlur = new int[gridSizeX, gridSizeY];
+
+        for(int y = 0; y < gridSizeY; y++)
+        {
+            for(int x = -kernelExtents; x <= kernelExtents; x++)
+            {
+                int sampleX = Mathf.Clamp(x, 0, kernelExtents);
+                horizontalBlur[0, y] += grid[sampleX, y].weightPenalty;
+            }
+            for(int x = 1; x < gridSizeX; x++)
+            {
+                int removeIndex = Mathf.Clamp(x - kernelExtents - 1, 0, gridSizeX);
+                int addIndex = Mathf.Clamp(x + kernelExtents, 0, gridSizeX - 1);
+
+                horizontalBlur[x, y] = horizontalBlur[x - 1, y] - grid[removeIndex, y].weightPenalty + grid[addIndex, y].weightPenalty;
+            }
+        }
+        for (int x = 0; x < gridSizeX; x++)
+        {
+            for (int y = -kernelExtents; y <= kernelExtents; y++)
+            {
+                int sampleY = Mathf.Clamp(y, 0, kernelExtents);
+                veritcalBlur[x, 0] += horizontalBlur[x, sampleY];
+            }
+            for (int y = 1; y < gridSizeY; y++)
+            {
+                int removeIndex = Mathf.Clamp(y - kernelExtents - 1, 0, gridSizeY);
+                int addIndex = Mathf.Clamp(y + kernelExtents, 0, gridSizeY - 1);
+
+                veritcalBlur[x, y] = veritcalBlur[x, y - 1] - horizontalBlur[x, removeIndex] + horizontalBlur[x, addIndex];
+                int blurredResult = Mathf.RoundToInt((float)veritcalBlur[x, y] / (kernelSize * kernelSize));
+                grid[x, y].weightPenalty = blurredResult;
+
+                if (blurredResult > maxPenalty)
+                    maxPenalty = blurredResult;
+                if (blurredResult < minPenalty)
+                    minPenalty = blurredResult;
             }
         }
     }
@@ -155,15 +208,16 @@ public class Grid2D : MonoBehaviour {
             {
                 foreach (Node node in grid)
                 {
-
+                    Gizmos.color = Color.Lerp(Color.white, Color.black, Mathf.InverseLerp(minPenalty, maxPenalty, node.weightPenalty));
                     if (node.isWall)
                     {
-                        Gizmos.color = Color.black; // color our wall white
+                        Gizmos.color = Color.red; // color our wall white
                     }
                     else
                     {
-                        Gizmos.color = Color.white; // color the floor yellow.
+                        Gizmos.color = Gizmos.color; // color the floor yellow.
                     }
+                    
                     Gizmos.DrawCube(node.Position, Vector3.one * (nodeDiameter / 2 - Distance)); //Draw our node
                 }
             }
