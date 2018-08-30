@@ -13,6 +13,7 @@ public class Grid2D : MonoBehaviour {
     int searchRadius = 1;
     public TerrianType[] walkableRegions;
     LayerMask walkableMask;
+    public int nearbyWallPenalty = 10;
     Dictionary<int, int> walkableDict = new Dictionary<int, int>();
     public bool blurredGraph = true;
     public int blurRadius = 3;
@@ -54,11 +55,7 @@ public class Grid2D : MonoBehaviour {
                 Vector3 worldPoint = bottomLeft + Vector3.right * (x * nodeDiameter + nodeRadius) + Vector3.up * (y * nodeDiameter + nodeRadius); //math that starts at the bottomleft then adds vectors to get the nodes current location
                 bool Wall = false;
                 bool wallColCheck = Physics2D.OverlapCircle(worldPoint, nodeRadius, wallMask);
-                if (wallColCheck)
-                {
-                    Wall = true;
-                    wallCount += 1;
-                }
+
 
                 int weightPenalty = 0;
 
@@ -71,6 +68,13 @@ public class Grid2D : MonoBehaviour {
                         walkableDict.TryGetValue(hit.collider.gameObject.layer, out weightPenalty);
                     }
                     
+                }
+                
+                if (wallColCheck)
+                {
+                    Wall = true;
+                    wallCount += 1;
+                    weightPenalty += nearbyWallPenalty;
                 }
 
                 grid[x, y] = new Node(Wall, worldPoint, x, y, weightPenalty);
@@ -134,13 +138,15 @@ public class Grid2D : MonoBehaviour {
                 int sampleY = Mathf.Clamp(y, 0, kernelExtents);
                 veritcalBlur[x, 0] += horizontalBlur[x, sampleY];
             }
+            int blurredResult = Mathf.RoundToInt((float)veritcalBlur[x, 0] / (kernelSize * kernelSize));
+            grid[x, 0].weightPenalty = blurredResult;
             for (int y = 1; y < gridSizeY; y++)
             {
                 int removeIndex = Mathf.Clamp(y - kernelExtents - 1, 0, gridSizeY);
                 int addIndex = Mathf.Clamp(y + kernelExtents, 0, gridSizeY - 1);
 
                 veritcalBlur[x, y] = veritcalBlur[x, y - 1] - horizontalBlur[x, removeIndex] + horizontalBlur[x, addIndex];
-                int blurredResult = Mathf.RoundToInt((float)veritcalBlur[x, y] / (kernelSize * kernelSize));
+                blurredResult = Mathf.RoundToInt((float)veritcalBlur[x, y] / (kernelSize * kernelSize));
                 grid[x, y].weightPenalty = blurredResult;
 
                 if (blurredResult > maxPenalty)
